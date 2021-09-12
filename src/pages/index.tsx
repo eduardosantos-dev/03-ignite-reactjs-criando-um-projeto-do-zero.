@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Head from 'next/Head';
 
 interface Post {
   uid?: string;
@@ -41,17 +42,10 @@ export default function Home({ postsPagination }: HomeProps) {
 
     fetch(nextPage).then(res =>
       res.json().then(data => {
-        console.log(data);
         const postsResponse = data.results.map(post => {
           return {
             uid: post.uid,
-            first_publication_date: format(
-              new Date(post.first_publication_date),
-              'dd MMM yyyy',
-              {
-                locale: ptBR,
-              }
-            ),
+            first_publication_date: post.first_publication_date,
             data: {
               author: post.data.author,
               subtitle: post.data.subtitle,
@@ -66,41 +60,48 @@ export default function Home({ postsPagination }: HomeProps) {
     );
   };
 
+  console.log(posts);
   return (
-    <main className={commonStyles.container}>
-      {posts &&
-        posts.map(post => (
-          <Link href={`/post/${post.uid}`} key={post.uid}>
-            <a>
-              <div className={styles.post}>
-                <h1>{post.data.title}</h1>
-                <p>{post.data.subtitle}</p>
-                <div className={styles.footer}>
-                  <div className={styles.postInfo}>
-                    <FiCalendar />
-                    <span>
-                      {format(
-                        new Date(post.first_publication_date),
-                        'dd MMM yyyy',
-                        { locale: ptBR }
-                      )}
-                    </span>
-                  </div>
-                  <div className={styles.postInfo}>
-                    <FiUser />
-                    <span>{post.data.author}</span>
+    <>
+      <Head>
+        <title>Spacetraveling | Home </title>
+      </Head>
+
+      <main className={commonStyles.container}>
+        {posts &&
+          posts.map(post => (
+            <Link href={`/post/${post.uid}`} key={post.uid}>
+              <a>
+                <div className={styles.post}>
+                  <h1>{post.data.title}</h1>
+                  <p>{post.data.subtitle}</p>
+                  <div className={styles.footer}>
+                    <div className={styles.postInfo}>
+                      <FiCalendar />
+                      <span>
+                        {format(
+                          new Date(post.first_publication_date),
+                          'dd MMM yyyy',
+                          { locale: ptBR }
+                        )}
+                      </span>
+                    </div>
+                    <div className={styles.postInfo}>
+                      <FiUser />
+                      <span>{post.data.author}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </a>
-          </Link>
-        ))}
-      {nextPage && (
-        <span className={styles.loadMorePosts} onClick={handleLoadMorePosts}>
-          Carregar mais posts
-        </span>
-      )}
-    </main>
+              </a>
+            </Link>
+          ))}
+        {nextPage && (
+          <span className={styles.loadMorePosts} onClick={handleLoadMorePosts}>
+            Carregar mais posts
+          </span>
+        )}
+      </main>
+    </>
   );
 }
 
@@ -110,7 +111,7 @@ export const getStaticProps: GetStaticProps = async () => {
     Prismic.Predicates.at('document.type', 'posts'),
     {
       fetch: ['post.title', 'post.content'],
-      pageSize: 1,
+      pageSize: 5,
     }
   );
 
@@ -123,11 +124,6 @@ export const getStaticProps: GetStaticProps = async () => {
         author: post.data.author,
       },
       first_publication_date: post.first_publication_date,
-      // first_publication_date: format(
-      //   new Date(post.first_publication_date),
-      //   'dd MMM yyyy',
-      //   { locale: ptBR }
-      // ),
     };
   });
 

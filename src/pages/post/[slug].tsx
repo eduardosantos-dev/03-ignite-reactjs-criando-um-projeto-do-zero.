@@ -9,8 +9,9 @@ import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/Head';
 
 interface Post {
   uid?: string;
@@ -57,10 +58,11 @@ export default function Post({ post }: PostProps) {
     getReadTime(post);
   }, []);
 
-  console.log(post);
-
   return (
     <>
+      <Head>
+        <title>Spacetraveling | {post?.data?.title} </title>
+      </Head>
       <div
         className={styles.hero}
         style={{ backgroundImage: `url(${post?.data?.banner?.url})` }}
