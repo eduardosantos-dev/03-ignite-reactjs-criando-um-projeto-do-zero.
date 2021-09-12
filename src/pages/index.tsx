@@ -60,7 +60,6 @@ export default function Home({ postsPagination }: HomeProps) {
     );
   };
 
-  console.log(posts);
   return (
     <>
       <Head>
