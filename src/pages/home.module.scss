@@ -1,1 +1,44 @@
-// TODO
+.post {
+  margin-bottom: 3rem;
+
+  h1 {
+    color: var(--heading);
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.03125rem;
+  }
+
+  p {
+    font-size: 1.125rem;
+    font-weight: normal;
+    margin-bottom: 1.5rem;
+  }
+
+  .footer {
+    display: flex;
+
+    .postInfo {
+      color: var(--info);
+      font-size: 0.875rem;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      & + .postInfo {
+        margin-left: 1.625rem;
+      }
+
+      span {
+        margin-left: 0.5rem;
+      }
+    }
+  }
+}
+
+.loadMorePosts {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--highlight);
+}
