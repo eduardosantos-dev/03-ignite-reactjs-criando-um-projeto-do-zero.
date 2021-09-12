@@ -9,12 +9,15 @@ import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 
 interface Post {
+  uid?: string;
   first_publication_date: string | null;
-  time_to_read: number;
   data: {
     title: string;
+    subtitle: string;
     banner: {
       url: string;
     };
@@ -33,6 +36,29 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps) {
+  const [readTime, setReadTime] = useState(0);
+  const router = useRouter();
+
+  if (router.isFallback) {
+    return <div>Carregando...</div>;
+  }
+
+  function getReadTime(post: Post) {
+    let text;
+    post.data.content.map(content => {
+      text += content.heading;
+      text += RichText.asText(content.body).split(/<.+?>(.+?)<\/.+?>/g);
+    });
+
+    setReadTime(Math.ceil(text.split(' ').length / 200));
+  }
+
+  useEffect(() => {
+    getReadTime(post);
+  }, []);
+
+  console.log(post);
+
   return (
     <>
       <div
@@ -46,7 +72,11 @@ export default function Post({ post }: PostProps) {
           <div className={styles.postInfoContainer}>
             <div className={styles.postInfo}>
               <FiCalendar />
-              <span>{post?.first_publication_date}</span>
+              <span>
+                {format(new Date(post.first_publication_date), 'dd MMM yyyy', {
+                  locale: ptBR,
+                })}
+              </span>
             </div>
             <div className={styles.postInfo}>
               <FiUser />
@@ -55,7 +85,7 @@ export default function Post({ post }: PostProps) {
             </div>
             <div className={styles.postInfo}>
               <FiClock />
-              <span>{post?.time_to_read} min</span>
+              <span>{readTime} min</span>
             </div>
           </div>
         </header>
@@ -108,22 +138,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const response = await prismic.getByUID('posts', String(slug), {});
 
-  let text;
-  response.data.content.map(content => {
-    text += content.title;
-    text += RichText.asText(content.body).split(/<.+?>(.+?)<\/.+?>/g);
-  });
-
-  const time_to_read = Math.ceil(text.split(' ').length / 200);
-
   const post: Post = {
-    first_publication_date: format(new Date(), 'dd MMM yyyy', { locale: ptBR }),
-    time_to_read: time_to_read ?? 0,
+    uid: response.uid,
+    first_publication_date: response.first_publication_date,
     data: {
-      ...response.data,
       title: response.data.title,
-      banner: response.data.banner,
+      subtitle: response.data.subtitle,
       author: response.data.author,
+      banner: response.data.banner,
       content: response.data.content,
     },
   };

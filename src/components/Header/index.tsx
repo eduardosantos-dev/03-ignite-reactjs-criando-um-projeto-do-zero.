@@ -7,7 +7,7 @@ import React from 'react';
 
 import styles from './header.module.scss';
 
-export function Header() {
+export default function Header() {
   return (
     <header className={styles.headerContainer}>
       <div className={styles.headerContent}>

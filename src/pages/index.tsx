@@ -8,7 +8,7 @@ import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
 interface Post {
@@ -31,13 +31,37 @@ interface HomeProps {
 }
 
 export default function Home({ postsPagination }: HomeProps) {
-  const posts = postsPagination.results;
+  const [posts, setPosts] = useState<Post[]>(postsPagination.results);
+  const [nextPage, setNextPage] = useState(postsPagination.next_page);
 
-  const handleLoadMorePosts = async () => {
-    const { next_page } = postsPagination;
-    fetch(next_page).then(res =>
+  const handleLoadMorePosts = async e => {
+    e.preventDefault();
+
+    if (!nextPage) return;
+
+    fetch(nextPage).then(res =>
       res.json().then(data => {
         console.log(data);
+        const postsResponse = data.results.map(post => {
+          return {
+            uid: post.uid,
+            first_publication_date: format(
+              new Date(post.first_publication_date),
+              'dd MMM yyyy',
+              {
+                locale: ptBR,
+              }
+            ),
+            data: {
+              author: post.data.author,
+              subtitle: post.data.subtitle,
+              title: post.data.title,
+            },
+          };
+        });
+
+        setPosts([...posts, ...postsResponse]);
+        setNextPage(data.next_page);
       })
     );
   };
@@ -46,7 +70,7 @@ export default function Home({ postsPagination }: HomeProps) {
     <main className={commonStyles.container}>
       {posts &&
         posts.map(post => (
-          <Link href={`/post/${post.uid}`}>
+          <Link href={`/post/${post.uid}`} key={post.uid}>
             <a>
               <div className={styles.post}>
                 <h1>{post.data.title}</h1>
@@ -54,7 +78,13 @@ export default function Home({ postsPagination }: HomeProps) {
                 <div className={styles.footer}>
                   <div className={styles.postInfo}>
                     <FiCalendar />
-                    <span>{post.first_publication_date}</span>
+                    <span>
+                      {format(
+                        new Date(post.first_publication_date),
+                        'dd MMM yyyy',
+                        { locale: ptBR }
+                      )}
+                    </span>
                   </div>
                   <div className={styles.postInfo}>
                     <FiUser />
@@ -65,14 +95,10 @@ export default function Home({ postsPagination }: HomeProps) {
             </a>
           </Link>
         ))}
-      {postsPagination.next_page && (
-        <a
-          className={styles.loadMorePosts}
-          href=""
-          onClick={handleLoadMorePosts}
-        >
+      {nextPage && (
+        <span className={styles.loadMorePosts} onClick={handleLoadMorePosts}>
           Carregar mais posts
-        </a>
+        </span>
       )}
     </main>
   );
@@ -80,30 +106,35 @@ export default function Home({ postsPagination }: HomeProps) {
 
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
-  const postsResponse = await prismic.query(
+  const response = await prismic.query(
     Prismic.Predicates.at('document.type', 'posts'),
     {
-      pageSize: 2,
+      fetch: ['post.title', 'post.content'],
+      pageSize: 1,
     }
   );
 
-  const formattedPosts = postsResponse.results.map(post => {
+  const posts = response.results.map(post => {
     return {
-      ...post,
-      first_publication_date: format(
-        new Date(post.first_publication_date),
-        'dd MMM yyyy',
-        { locale: ptBR }
-      ),
+      uid: post.uid,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+      first_publication_date: post.first_publication_date,
+      // first_publication_date: format(
+      //   new Date(post.first_publication_date),
+      //   'dd MMM yyyy',
+      //   { locale: ptBR }
+      // ),
     };
   });
 
-  const formattedPostPagination = {
-    ...postsResponse,
-    results: formattedPosts,
-  };
-
   return {
-    props: { postsPagination: formattedPostPagination },
+    props: {
+      postsPagination: { next_page: response.next_page, results: posts },
+    },
+    revalidate: 60 * 60 * 2, // 2 hours
   };
 };
