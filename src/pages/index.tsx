@@ -11,6 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Head from 'next/Head';
+import PreviewButton from '../components/PreviewButton';
 
 interface Post {
   uid?: string;
@@ -29,9 +30,10 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean;
 }
 
-export default function Home({ postsPagination }: HomeProps) {
+export default function Home({ postsPagination, preview }: HomeProps) {
   const [posts, setPosts] = useState<Post[]>(postsPagination.results);
   const [nextPage, setNextPage] = useState(postsPagination.next_page);
 
@@ -99,12 +101,13 @@ export default function Home({ postsPagination }: HomeProps) {
             Carregar mais posts
           </span>
         )}
+        <PreviewButton preview={preview} />
       </main>
     </>
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({ preview = false }) => {
   const prismic = getPrismicClient();
   const response = await prismic.query(
     Prismic.Predicates.at('document.type', 'posts'),
@@ -129,6 +132,7 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
       postsPagination: { next_page: response.next_page, results: posts },
+      preview,
     },
     revalidate: 60 * 60 * 2, // 2 hours
   };

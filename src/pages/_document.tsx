@@ -17,6 +17,11 @@ export default class MyDocument extends Document {
             href="/images/Logo_mini.svg"
             type="image/svg"
           />
+          <script
+            async
+            defer
+            src="https://static.cdn.prismic.io/prismic.js?new=true&repo=eduardo-santos-criando-projeto-do-zero"
+          ></script>
         </Head>
         <body>
           <Main />

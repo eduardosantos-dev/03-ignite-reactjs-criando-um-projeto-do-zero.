@@ -23,25 +23,37 @@
       letter-spacing: -0.03125rem;
     }
 
-    .postInfoContainer {
+    .postInfoWrapper {
       display: flex;
+      flex-direction: column;
+      align-items: flex-start;
       margin-top: 1.5rem;
       margin-bottom: 4rem;
 
-      .postInfo {
-        color: var(--info);
-
+      .postInfoContainer {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        margin-bottom: 1rem;
 
-        & + .postInfo {
-          margin-left: 1.5rem;
-        }
+        .postInfo {
+          color: var(--info);
 
-        span {
-          margin-left: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          & + .postInfo {
+            margin-left: 1.5rem;
+          }
+
+          span {
+            margin-left: 0.5rem;
+          }
         }
+      }
+
+      .updatedAt {
+        font-style: italic;
+        font-size: 0.875rem;
       }
     }
   }
@@ -72,6 +84,47 @@
 
     .paragraph {
       margin: 5rem 0;
+    }
+  }
+
+  .postPaginationContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5rem;
+    margin-top: 3.75rem;
+    border-top: 1px solid var(--body);
+    padding-top: 3rem;
+
+    .postPagination {
+      display: flex;
+      flex-direction: column;
+      width: 45%;
+
+      p {
+        color: var(--heading);
+        font-size: 1.125rem;
+        letter-spacing: -0.03125rem;
+        margin-bottom: 0.4375rem;
+
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      a {
+        color: var(--highlight);
+        font-weight: 600;
+        letter-spacing: -0.03125rem;
+      }
+
+      &.left {
+        text-align: left;
+      }
+
+      &.right {
+        text-align: right;
+        margin-left: auto;
+      }
     }
   }
 }

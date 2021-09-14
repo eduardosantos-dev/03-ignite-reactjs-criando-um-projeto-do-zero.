@@ -11,10 +11,13 @@ import styles from './post.module.scss';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/Head';
+import { useUtterances } from '../../hooks/useUtterances';
+import PreviewButton from '../../components/PreviewButton';
 
 interface Post {
   uid?: string;
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     subtitle: string;
@@ -33,11 +36,16 @@ interface Post {
 
 interface PostProps {
   post: Post;
+  preview: boolean;
+  prevPost: Post;
+  nextPost: Post;
 }
 
-export default function Post({ post }: PostProps) {
+export default function Post({ post, preview, prevPost, nextPost }: PostProps) {
   const [readTime, setReadTime] = useState(0);
   const router = useRouter();
+
+  useUtterances('comments');
 
   if (router.isFallback) {
     return <div>Carregando...</div>;
@@ -70,24 +78,41 @@ export default function Post({ post }: PostProps) {
       <main className={styles.postContainer}>
         <header>
           <h1>{post?.data?.title}</h1>
-          <div className={styles.postInfoContainer}>
-            <div className={styles.postInfo}>
-              <FiCalendar />
-              <span>
-                {format(new Date(post.first_publication_date), 'dd MMM yyyy', {
-                  locale: ptBR,
-                })}
-              </span>
-            </div>
-            <div className={styles.postInfo}>
-              <FiUser />
+          <div className={styles.postInfoWrapper}>
+            <div className={styles.postInfoContainer}>
+              <div className={styles.postInfo}>
+                <FiCalendar />
+                <span>
+                  {format(
+                    new Date(post.first_publication_date),
+                    'dd MMM yyyy',
+                    {
+                      locale: ptBR,
+                    }
+                  )}
+                </span>
+              </div>
+              <div className={styles.postInfo}>
+                <FiUser />
 
-              <span>{post?.data?.author}</span>
+                <span>{post?.data?.author}</span>
+              </div>
+              <div className={styles.postInfo}>
+                <FiClock />
+                <span>{readTime} min</span>
+              </div>
             </div>
-            <div className={styles.postInfo}>
-              <FiClock />
-              <span>{readTime} min</span>
-            </div>
+            {post?.last_publication_date && (
+              <time className={styles.updatedAt}>
+                {format(
+                  new Date(post.last_publication_date),
+                  "'* editado em 'dd MMM yyyy', às 'p",
+                  {
+                    locale: ptBR,
+                  }
+                )}
+              </time>
+            )}
           </div>
         </header>
         <article className={styles.postContent}>
@@ -101,8 +126,24 @@ export default function Post({ post }: PostProps) {
               ></div>
             </div>
           ))}
-          <div></div>
         </article>
+        <div className={styles.postPaginationContainer}>
+          {prevPost && (
+            <div className={`${styles.postPagination} ${styles.left}`}>
+              <p>{prevPost.data.title}</p>
+              <a href={`/post/${prevPost.uid}`}>Post anterior</a>
+            </div>
+          )}
+
+          {nextPost && (
+            <div className={`${styles.postPagination} ${styles.right}`}>
+              <p>{nextPost.data.title}</p>
+              <a href={`/post/${nextPost.uid}`}>Próximo post</a>
+            </div>
+          )}
+        </div>
+        <div id="comments" />
+        <PreviewButton preview={preview} />
       </main>
     </>
   );
@@ -132,16 +173,23 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
   const { slug } = params;
 
   const prismic = getPrismicClient();
 
-  const response = await prismic.getByUID('posts', String(slug), {});
+  const response = await prismic.getByUID('posts', String(slug), {
+    ref: previewData?.ref ?? null,
+  });
 
   const post: Post = {
     uid: response.uid,
     first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,
@@ -151,8 +199,29 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   };
 
+  const prevResponse = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts'),
+    {
+      pageSize: 1,
+      after: post?.uid,
+      orderings: '[document.first_publication_date]',
+    }
+  );
+
+  const nextResponse = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts'),
+    {
+      pageSize: 1,
+      after: post?.uid,
+      orderings: '[document.first_publication_date desc]',
+    }
+  );
+
+  const prevPost = prevResponse?.results[0] || null;
+  const nextPost = nextResponse?.results[0] || null;
+
   return {
-    props: { post },
+    props: { post, preview, prevPost, nextPost },
     revalidate: 60 * 30, // 30 minutes
   };
 };
